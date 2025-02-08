@@ -1,9 +1,10 @@
 'use client'
 
+import GUI from "lil-gui";
 import React, { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-export default function Oval() {
+export default function OvalPage() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
 
     useEffect(() => {
@@ -12,53 +13,83 @@ export default function Oval() {
             const scene = new THREE.Scene();
             scene.background = new THREE.Color("white");
 
-            // Renderer 설정
             const renderer = new THREE.WebGLRenderer({
                 canvas: canvasRef.current,
                 antialias: true,
             });
             renderer.setSize(window.innerWidth, window.innerHeight);
 
-            // Camera 설정
-            const camera = new THREE.PerspectiveCamera(
-                75,
-                window.innerWidth / window.innerHeight,
-                0.1,
-                1000
-            );
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
             camera.position.z = 5;
 
-            // Cube 생성
-            // 1. 형상(Geometry) 정의
-            const geometry = new THREE.SphereGeometry(1, 32, 32);
-            // 파라미터: (반지름, 수평 분할 수, 수직 분할 수)
-            // - 1: 구의 반지름
-            // - 32: 가로 방향 분할 수 (더 많을수록 더 부드러운 구)
-            // - 32: 세로 방향 분할 수 (더 많을수록 더 부드러운 구)
+            // 파라미터 객체 생성
+            const params = {
+                waveFrequency: 5,
+                waveAmplitude: 0.1,
+                waveSpeed: 0.05,
+                rotationSpeed: 0.005,
+                wireframe: false
+            };
 
-            // 2. 재질(Material) 정의
-            const material = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
-            // MeshPhongMaterial: 빛을 받아 반사하는 광택 있는 재질
-            // 0x00ff00: 초록색 (RGB: 00 FF 00)
-
-            // 3. 메시(Mesh) 생성 - 형상과 재질을 결합
+            // 구 생성
+            const geometry = new THREE.SphereGeometry(1, 64, 64);
+            const material = new THREE.MeshPhongMaterial({
+                color: 0x00ff00,
+                shininess: 100,
+                wireframe: params.wireframe
+            });
             const sphere = new THREE.Mesh(geometry, material);
-            // Mesh는 형상(geometry)과 재질(material)을 결합한 실제 3D 객체
-
-            // 4. 씬에 추가
             scene.add(sphere);
-            // 생성된 메시를 3D 씬에 추가
 
-            // 조명 추가
+            // GUI 설정
+            const gui = new GUI();
+            gui.add(params, 'waveFrequency', 1, 20, 0.1).name('Wave Frequency');
+            gui.add(params, 'waveAmplitude', 0, 0.5, 0.01).name('Wave Height');
+            gui.add(params, 'waveSpeed', 0, 0.2, 0.01).name('Wave Speed');
+            gui.add(params, 'rotationSpeed', 0, 0.02, 0.001).name('Rotation Speed');
+            gui.add(params, 'wireframe').onChange((value: boolean) => {
+                material.wireframe = value;
+            }).name('Wireframe');
+
+            // 조명 설정
             const light = new THREE.DirectionalLight(0xffffff, 1);
-            light.position.set(0, 0, 2);
+            light.position.set(1, 1, 2);
             scene.add(light);
 
+            const ambientLight = new THREE.AmbientLight(0x404040);
+            scene.add(ambientLight);
+
+            // 원본 버텍스 위치 저장
+            const originalPositions = geometry.attributes.position.array.slice();
+
             // 애니메이션 함수
+            let time = 0;
             const animate = () => {
                 requestAnimationFrame(animate);
-                sphere.rotation.x += 0.01;
-                sphere.rotation.y += 0.01;
+                time += params.waveSpeed;
+
+                // 버텍스 위치 업데이트
+                const positions = geometry.attributes.position.array;
+                for (let i = 0; i < positions.length; i += 3) {
+                    const x = originalPositions[i];
+                    const y = originalPositions[i + 1];
+                    const z = originalPositions[i + 2];
+
+                    const distance = Math.sqrt(x * x + y * y + z * z);
+                    const theta = Math.acos(z / distance);
+                    const phi = Math.atan2(y, x);
+
+                    const wave = Math.sin(params.waveFrequency * phi + time) * params.waveAmplitude;
+                    const newDistance = distance + wave;
+
+                    positions[i] = newDistance * Math.sin(theta) * Math.cos(phi);
+                    positions[i + 1] = newDistance * Math.sin(theta) * Math.sin(phi);
+                    positions[i + 2] = newDistance * Math.cos(theta);
+                }
+
+                geometry.attributes.position.needsUpdate = true;
+                sphere.rotation.y += params.rotationSpeed;
+
                 renderer.render(scene, camera);
             };
 
@@ -77,6 +108,7 @@ export default function Oval() {
             // 클린업
             return () => {
                 window.removeEventListener('resize', handleResize);
+                gui.destroy();
             };
         }
     }, [canvasRef]);
