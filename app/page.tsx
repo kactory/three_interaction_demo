@@ -21,10 +21,10 @@ export default function Home() {
         </Link>
 
         <Link
-          href="/import-demo"
+          href="/import-combined-demo"
           className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
         >
-          View Import Demo
+          View Import Combined Demo
         </Link>
       </div>
     </main>
