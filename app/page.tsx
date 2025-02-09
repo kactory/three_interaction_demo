@@ -7,17 +7,24 @@ export default function Home() {
 
       <div className="flex gap-4">
         <Link
-          href="/cube"
+          href="/cube-demo"
           className="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors"
         >
-          View Cube
+          View Cube Demo
         </Link>
 
         <Link
-          href="/oval"
+          href="/oval-demo"
           className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
         >
-          View Sphere
+          View Oval Demo
+        </Link>
+
+        <Link
+          href="/import-demo"
+          className="px-6 py-3 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors"
+        >
+          View Import Demo
         </Link>
       </div>
     </main>
