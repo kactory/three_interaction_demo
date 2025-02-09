@@ -50,36 +50,49 @@ export default function ImportDemo() {
             .then((gltf) => {
                 try {
                     const model = gltf.scene;
+                    console.log(model);
 
-                    // 모델 크기 조정 (필요한 경우)
-                    model.scale.set(
-                        MODEL_PATHS.OBJECTS.tables.scale,
-                        MODEL_PATHS.OBJECTS.tables.scale,
-                        MODEL_PATHS.OBJECTS.tables.scale
-                    );
-
-                    // 모델을 씬에 추가
-                    scene.add(model);
-
-                    // 모델의 바운딩 박스 계산하여 카메라 위치 자동 조정
                     const box = new THREE.Box3().setFromObject(model);
                     const center = box.getCenter(new THREE.Vector3());
-                    const size = box.getSize(new THREE.Vector3());
 
-                    const maxDim = Math.max(size.x, size.y, size.z);
+                    model.position.set(-center.x, -center.y, -center.z);
+
+                    // 격자로부터 모델의 위치를 표시해주는 선 헬퍼인 듯
+                    const axesHelper = new THREE.AxesHelper(5);
+                    // 격자 헬퍼
+                    const gridHelper = new THREE.GridHelper(10, 10);
+
+                    scene.add(axesHelper);
+                    scene.add(gridHelper);
+                    scene.add(model);
+
+                    // 카메라 위치 자동 조정
+                    const modelBox = new THREE.Box3().setFromObject(model);
+                    const modelSize = modelBox.getSize(new THREE.Vector3());
+                    const modelCenter = modelBox.getCenter(new THREE.Vector3());
+
+                    // x, y, z 중 가장 큰 값을 찾아서 카메라의 깊이를 계산
+                    const maxDim = Math.max(modelSize.x, modelSize.y, modelSize.z);
+                    // 카메라의 FOV(Field of View)를 도(degree)에서 라디안으로 변환
                     const fov = camera.fov * (Math.PI / 180);
-                    const cameraZ = Math.abs(maxDim / Math.tan(fov / 2));
+                    // 카메라의 깊이를 계산
+                    const cameraZ = Math.abs(maxDim / Math.tan(fov / 2)) * 2;
 
-                    camera.position.set(center.x, center.y + (size.y / 2), center.z + cameraZ);
-                    camera.lookAt(center);
+                    camera.position.set(
+                        modelCenter.x,
+                        modelCenter.y + (modelSize.y / 2),
+                        modelCenter.z + cameraZ
+                    );
+
+                    camera.lookAt(modelCenter);
 
                     // 컨트롤 타겟을 모델 중심으로
-                    controls.target.copy(center);
+                    controls.target.copy(modelCenter);
                     controls.update();
-                } catch (error) {
-                    console.error('Error loading model:', error);
-                }
 
+                } catch (error) {
+                    console.error('Error setting up model:', error);
+                }
             })
             .catch((error) => {
                 console.error('Error loading model:', error);

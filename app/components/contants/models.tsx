@@ -9,7 +9,7 @@ export const MODEL_PATHS = {
         tables: {
             path: '/models/objects/table.gltf',
             type: 'GLTF',
-            scale: 0.01,
+            scale: 1,
             position: {
                 x: 0,
                 y: 0,
